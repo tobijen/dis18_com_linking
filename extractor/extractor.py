@@ -7,16 +7,18 @@ import requests
 
 
 # Extract clean COM Numbers  
-# TODO: Implement logic (method) to get the search results for the COM Numbers
-# TODO: Extract the right (most fitting) search result
-# TODO: Extract link from the search result 
+# Implement logic (method) to get the search results for the COM Numbers
+# Extract the right (most fitting) search result
+# TODO: Test if all com numbers getting the right link
+# TODO: Add method to manipulate html
+
 
 class COM_Extractor:
 
     def __init__(self, file):
         self.file = file
 
-    def extract(self):
+    def extract_com(self):
 
         """
             This method aims to extract all com numbers with the corresponding footnote,
@@ -33,21 +35,42 @@ class COM_Extractor:
         extracted_com= []
         for f in footer:
 
+            #print(f)
+
             if f.find_all("a", {"class": "externalRef"}):  # if a tag with class="externalRef" is already present, ignore it
                 continue
 
             inner_text = f.getText() # get the content (text) from the footer
-            com_findings = re.findall("(COM\s?\([0-9][0-9][0-9][0-9]\)\s?[0-9]*\s(?:final))|(COM\s?\([0-9][0-9][0-9][0-9]\)[0-9]*)", inner_text) #regex for extracting com numbers 
+            com_findings = re.findall(
+                "(COM\s?\([0-9][0-9][0-9][0-9]\)\s?\s?\[?[0-9]*\]?\s?(?:final)?)|(COM\s?/[0-9][0-9][0-9][0-9]/\[?[0-9]*\]?\s(?:final)?)",
+                 inner_text) #regex for extracting com numbers 
+
+            print(com_findings)
 
             for results in com_findings:
                 for com in results:
                     if com != '':
                         if com in inner_text:   # check if com number is in the current innertext to extract the corresponding com number
                             footnote_att = f.attrs
-                            com_dict = {footnote_att["id"]: com}
+                            com_dict = {"footnote": footnote_att["id"], "com_number": com}
                             extracted_com.append(com_dict)
 
         print(extracted_com)
+        print(len(extracted_com))
+
+        self.add_link(extracted_com)
+
+        #[self.scrape_google(val) for dic in extracted_com for val in dic.values()]
+
+    def add_link(self, com_list: list):
+        for com_obj in com_list:
+            for key, value in com_obj.items():
+                if key == "com_number":
+                    link = self.scrape_google(value)
+            update_obj = {"link": link}
+            com_obj.update(update_obj)
+            print(com_obj)
+            
 
     def get_source(self, url):
         """Return the source code for the provided URL. 
@@ -67,20 +90,31 @@ class COM_Extractor:
         except requests.exceptions.RequestException as e:
             print(e)
 
+    def scrape_google(self, com_num: str):
 
-    def scrape_google(self, query):
+        """Return the found link from the googled com number. 
 
-        query = urllib.parse.quote_plus(query)
+        Args: 
+            com_num (string): com number to search for.
+
+        Returns:
+            response (string): the found link. 
+        """
+
+        query = urllib.parse.quote_plus(com_num) # pass com number
         response = self.get_source("https://www.google.co.uk/search?q=" + query)
 
         links = list(response.html.absolute_links)
+
+        # domians to exclude fron the search
         google_domains = ('https://www.google.', 
                         'https://google.', 
                         'https://webcache.googleusercontent.', 
                         'http://webcache.googleusercontent.', 
                         'https://policies.google.',
                         'https://support.google.',
-                        'https://maps.google.')
+                        'https://maps.google.',
+                        'https://translate.google.co',)
 
         for url in links[:]:
             if url.startswith(google_domains):
@@ -91,7 +125,8 @@ class COM_Extractor:
         extracted_link = ""
         for url in links:
             if eur_lex_url in url:
-                print(url)
+                #print(url)
                 extracted_link = url
 
         print(extracted_link)
+        return extracted_link

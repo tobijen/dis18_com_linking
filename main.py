@@ -8,8 +8,8 @@ import re
 
 from extractor.extractor import COM_Extractor
 
-com = COM_Extractor("./data/COM(2021)552final.html")
-com.scrape_google("COM(2019)640 final")
+com = COM_Extractor("./data/COM(2021)560final.html")
+com.extract_com()
   
 #COM(2019)640 final
 #COM(2020)562 final
