@@ -45,7 +45,7 @@ class COM_Extractor:
                 "(COM\s?\([0-9][0-9][0-9][0-9]\)\s?\s?\[?[0-9]*\]?\s?(?:final)?)|(COM\s?/[0-9][0-9][0-9][0-9]/\[?[0-9]*\]?\s(?:final)?)",
                  inner_text) #regex for extracting com numbers 
 
-            print(com_findings)
+            #print(com_findings)
 
             for results in com_findings:
                 for com in results:
@@ -58,18 +58,22 @@ class COM_Extractor:
         print(extracted_com)
         print(len(extracted_com))
 
-        self.add_link(extracted_com)
+        com_list = self.add_link(extracted_com)
 
-        #[self.scrape_google(val) for dic in extracted_com for val in dic.values()]
+        return com_list
 
     def add_link(self, com_list: list):
+
+        updated_list = []
         for com_obj in com_list:
             for key, value in com_obj.items():
                 if key == "com_number":
                     link = self.scrape_google(value)
             update_obj = {"link": link}
             com_obj.update(update_obj)
-            print(com_obj)
+            updated_list.append(com_obj)
+            
+        return updated_list
             
 
     def get_source(self, url):
